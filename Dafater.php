@@ -7,8 +7,10 @@ define("AUTHENTICATION", "https://dafateridentity-test.azurewebsites.net/connect
 
 $dafater = new Dafater();
 $token = $dafater->authenticate();
-$token = $dafater->getDocument("Doc");
 
+$dafater->createCustomer();
+
+$token = $dafater->getDocument("Customer");
 
 echo  $token;
 
@@ -46,24 +48,66 @@ Class Dafater{
 
 	public function getDocument($type){
 
-		$obj = json_decode($this->runGet("https://api.dafater.biz/document/Sales%20Invoice", true));
+		$obj = json_decode($this->runGet("https://api.dafater.biz/document/$type", true));
 
 		var_dump($obj);
 	}
 
-	/**
-	 * @param $url
-	 * @param $fields
-	 * @param bool $auth
-	 * @return bool|string
-	 */
-	public function runPost($url, $fields , $auth = false) {
-		$fields_string = "";
-		foreach ($fields as $key => $value) {
-			$fields_string .= $key . '=' . $value . '&';
+
+    public function createCustomer(){
+
+        $obj =$this->runPost("https://api.dafater.biz/document", [
+        	"doctype" => "Customer",
+            "name"=> "Test Account",
+			"customer_name" => "Test Account",
+            "customer_type"=>  "Individual",
+        ],true,true);
+
+        var_dump($obj);
+    }
+
+    /**
+     * @param $url
+     * @param $fields
+     * @param bool $auth
+     * @param bool $json
+     * @return mixed
+     */
+	public function runPost($url, $fields , $auth = false , $json = false) {
+
+
+
+        $header = [
+            'Accept: application/json',
+        ];
+
+		if($json){
+
+            $fields_string = json_encode($fields);
+            $header[] = 'Content-Type: application/json';
+            $header[] =  'Content-Length: ' . strlen($fields_string);
+
+        }else{
+            $fields_string = "";
+            foreach ($fields as $key => $value) {
+                $fields_string .= $key . '=' . $value . '&';
+            }
+            rtrim($fields_string, '&');
 		}
-		rtrim($fields_string, '&');
-		$ch = curl_init();
+
+
+
+
+
+
+        if($auth && $this->access_token && $this->token_type){
+
+			$header[] =   'Accept: application/json';
+            $header[] = 'Authorization:' .$this->token_type .' '. $this->access_token;
+        }
+
+
+        $ch = curl_init();
 
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_POST, count($fields));
@@ -71,19 +115,17 @@ Class Dafater{
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_REFERER, 1);
 
-
-		if($auth && $this->access_token && $this->token_type){
-			$header = [
-				'Accept: application/json',
-				'Authorization:' .$this->token_type .' '. $this->access_token
-			];
-
-			curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-		}
+		if(count($header) > 0){
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+        }
 
 
 		$result = curl_exec($ch);
-		curl_close($ch);
+
+		if($result === false){
+            echo 'Curl error: ' . curl_error($ch);
+        }
+        curl_close($ch);
 
 		return $result;
 	}
