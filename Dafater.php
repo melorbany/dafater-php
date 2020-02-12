@@ -43,12 +43,25 @@ Class Dafater
 
     /**
      * @param $document_type
+     * @param array $filters
      * @return mixed
      */
-    public function getDocument($document_type)
+    public function getDocument($document_type ,array $filters = [])
     {
 
-        $obj = json_decode($this->get("https://api.dafater.biz/document/$document_type", true));
+        $url = "https://api.dafater.biz/document/$document_type";
+
+
+        foreach ($filters as $param => $val){
+            $url .= $param.'='.$val.'&';
+        }
+        $url = rtrim($url, "/?");
+        $url = rtrim($url, "&");
+//        $url = str_replace(' ','%20',$url);
+
+        var_dump($url);
+
+        $obj = json_decode($this->get($url, true));
         return $obj;
     }
 

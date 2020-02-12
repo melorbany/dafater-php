@@ -5,12 +5,14 @@ include "Dafater.php";
 $dafater = new Dafater();
 $dafater->authenticate();
 
-
-$customer_name = rand(1000,9999) .'-'. "Test Account";
+$company = "شركة الحياة للتجزئة";
+//
+$customer_name = 1224 .'-'. "Test Account";
 $dafater->createDocument("Customer", [
     "name" => $customer_name,
     "customer_name" => $customer_name,
     "customer_type" => "Individual",
+    "company" => $company,
     "territory" => "المنطقة الوسطى",
 ]);
 
